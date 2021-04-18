@@ -5,7 +5,7 @@ CREATE DATABASE empTrackDB;
 USE empTrackDB;
 
 CREATE TABLE employee (
-  id INT NOT NULL AUTO_INCREMENT,
+  employeeid INT NOT NULL AUTO_INCREMENT,
   firstname VARCHAR(45) NULL,
   lastname VARCHAR(45) NULL,
   roleid INT,

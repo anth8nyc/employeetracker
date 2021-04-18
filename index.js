@@ -4,6 +4,8 @@ const inquirer = require('inquirer');
 const Employee = require("./lib/Employee");
 const empquestions = require("./lib/empquestions")
 
+let employees = []
+
 const connection = mysql.createConnection({
   host: 'localhost',
   port: 3306,
@@ -19,10 +21,19 @@ connection.connect((err) => {
     promptUser();
 });
 
-
 function promptUser(){
 
-    console.log(`Employee Manager!`)
+    connection.query(`SELECT employeeid, firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.id`, 
+        
+        (err, res) => {    
+            if (err) throw err;
+            employees = res
+            return res
+        }
+    );
+    
+    console.log(`Employee Manager!`);
+    console.log(employees);
     inquirer.prompt({
         type: 'list',
         message: 'What would you like to do?',
@@ -42,8 +53,8 @@ function promptUser(){
         case 'View All Roles':
           viewAllRoles();
           break;
-        case 'Remove an Employees':
-          afterConnection();
+        case 'Remove an Employee':
+          removeEmployee();
           break;
         case 'Update an Employee':
           afterConnection();
@@ -87,6 +98,50 @@ function addEmployee(){
     });
 
 };
+
+function removeEmployee(){
+    
+    employeenames = employees.map(employee => employee.combinedname);
+    console.log(employeenames)
+
+    inquirer.prompt({
+        type: 'list',
+        message: 'Who would you like to remove?',
+        name: 'removeEmp',
+        choices: [...employeenames]
+    })
+    .then((data)=>{
+        
+        let removedEmployeeName = data.removeEmp
+        console.log(removedEmployeeName)
+        let removedEmployee = employees.filter(emp => emp.combinedname === removedEmployeeName)
+       
+        console.log(removedEmployee)
+        console.log(removedEmployee[0].firstname)
+        console.log(removedEmployee[0].lastname)
+        console.log(removedEmployee[0].employeeid)
+        
+
+        console.log('Removing the employee...\n');
+        connection.query(
+          'DELETE FROM employee WHERE ?',
+          {
+            employeeid: removedEmployee[0].employeeid
+          },
+          (err, res) => {
+            if (err) throw err;
+    
+            console.log(`${res.affectedRows} was removed.\n`);
+          }
+        );
+
+        promptUser();
+        return removedEmployee
+    });
+
+};
+
+
 
 function viewAllEmployees(){
     connection.query(
