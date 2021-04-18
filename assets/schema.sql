@@ -15,9 +15,9 @@ CREATE TABLE employee (
 
 INSERT INTO employee (firstname, lastname, roleid, managerid)
 VALUES ("Anthony", "Castillo", 1, 1),
-("Ben", "Montgomery", 1, 1),
+("Ben", "Montgomery", 4, 1),
 ("Addie", "Olson", 2, 1),
-("Christina", "Nguyen", 2, 2);
+("Christina", "Nguyen", 3, 2);
 
 CREATE TABLE roles (
   id INT NOT NULL AUTO_INCREMENT,
@@ -28,10 +28,10 @@ CREATE TABLE roles (
 );
 
 INSERT INTO roles (title, salary, departmentid)
-VALUES ("Manager", 89500.00, 1),
+VALUES ("Code Manager", 89500.00, 1),
 ("Engineer", 69500.00, 1),
 ("Designer", 59500.00, 2),
-("Manager", 79500.00, 2);
+("Design Manager", 79500.00, 2);
 
 CREATE TABLE department (
   id INT NOT NULL AUTO_INCREMENT,
@@ -40,4 +40,22 @@ CREATE TABLE department (
 );
 
 INSERT INTO department (deptname)
-VALUES ("Code"),("Design"),("Finance")
+VALUES ("Code"),("Design"),("Finance");
+
+SELECT concat(firstname,' ',lastname) as combinedname, id from employee;
+
+-- Displays employee name, job title, department, manager id 
+SELECT firstname, lastname, title, salary, departmentid, managerid
+FROM employee
+RIGHT JOIN roles ON employee.roleid = roles.id;
+
+-- Displays department name, job title, salary 
+SELECT deptname, title, salary, departmentid
+FROM roles
+RIGHT JOIN department ON roles.departmentid = department.id;
+
+-- Displays employee name, job title, department, manager id 
+SELECT firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname
+FROM employee
+JOIN roles ON employee.roleid = roles.id
+JOIN department ON roles.departmentid = department.id;

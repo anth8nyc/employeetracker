@@ -22,11 +22,12 @@ connection.connect((err) => {
 
 function promptUser(){
 
+    console.log(`Employee Manager!`)
     inquirer.prompt({
         type: 'list',
         message: 'What would you like to do?',
         name: 'selectioncriteria',
-        choices: ['View All Employees', 'Add an Employee', `Remove an Employee`, `Update an Employee`, `Exit`]
+        choices: ['View All Employees', 'View All Roles', 'Add an Employee', `Remove an Employee`, `Update an Employee`, `Exit`]
     })
     .then((data)=>{
       console.log(data)
@@ -37,6 +38,9 @@ function promptUser(){
           break;
         case 'View All Employees':
           viewAllEmployees();
+          break;
+        case 'View All Roles':
+          viewAllRoles();
           break;
         case 'Remove an Employees':
           afterConnection();
@@ -85,7 +89,20 @@ function addEmployee(){
 };
 
 function viewAllEmployees(){
-    connection.query('SELECT * FROM employee', (err, res) => {
+    connection.query(
+        `SELECT firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.id`, 
+    
+        (err, res) => {
+            
+            if (err) throw err;
+            console.table(res);
+            promptUser();
+        }
+    );
+};
+
+function viewAllRoles(){
+    connection.query('SELECT * FROM roles', (err, res) => {
       if (err) throw err;
       console.table(res);
       promptUser();
