@@ -108,22 +108,18 @@ function removeEmployee(){
         type: 'list',
         message: 'Who would you like to remove?',
         name: 'removeEmp',
-        choices: [...employeenames]
+        choices: [...employeenames, 'Cancel']
     })
     .then((data)=>{
         
         let removedEmployeeName = data.removeEmp
-        console.log(removedEmployeeName)
-        let removedEmployee = employees.filter(emp => emp.combinedname === removedEmployeeName)
-       
-        console.log(removedEmployee)
-        console.log(removedEmployee[0].firstname)
-        console.log(removedEmployee[0].lastname)
-        console.log(removedEmployee[0].employeeid)
-        
+        if (removedEmployeeName === 'Cancel'){promptUser();}
+        else{
 
-        console.log('Removing the employee...\n');
-        connection.query(
+            let removedEmployee = employees.filter(emp => emp.combinedname === removedEmployeeName)
+       
+            console.log('Removing the employee...\n');
+            connection.query(
           'DELETE FROM employee WHERE ?',
           {
             employeeid: removedEmployee[0].employeeid
@@ -133,10 +129,12 @@ function removeEmployee(){
     
             console.log(`${res.affectedRows} was removed.\n`);
           }
-        );
+          );
 
-        promptUser();
-        return removedEmployee
+            promptUser();
+            return removedEmployee
+        }
+
     });
 
 };
