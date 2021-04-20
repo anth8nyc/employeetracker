@@ -2,16 +2,16 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 const util = require('util');
 
-const Employee = require("./lib/Employee");
-const Role = require("./lib/Role");
-const Department = require("./lib/Department");
-const empquestions = require("./lib/empquestions")
-const updatequestions = require("./lib/updatequestions")
-const rolequestions = require("./lib/rolequestions")
-const deptquestions = require("./lib/deptquestions")
-const empData = require("./lib/empData")
-const roleData = require("./lib/roleData")
-const deptData = require("./lib/deptData")
+const Employee = require("./lib/models/Employee");
+const Role = require("./lib/models/Role");
+const Department = require("./lib/models/Department");
+const empquestions = require("./lib/questions/empquestions")
+const updatequestions = require("./lib/questions/updatequestions")
+const rolequestions = require("./lib/questions/rolequestions")
+const deptquestions = require("./lib/questions/deptquestions")
+const empData = require("./lib/data/empData")
+const roleData = require("./lib/data/roleData")
+const deptData = require("./lib/data/deptData")
 
 let employees = []
 
