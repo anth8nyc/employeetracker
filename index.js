@@ -1,8 +1,11 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+const util = require('util');
 
 const Employee = require("./lib/Employee");
 const empquestions = require("./lib/empquestions")
+const updatequestions = require("./lib/updatequestions")
+const empData = require("./lib/empData")
 
 let employees = []
 
@@ -31,9 +34,14 @@ function promptUser(){
             return res
         }
     );
+
+    // employeenames = employees.map(employee => employee.combinedname);
+
+    console.log(employees);
     
     console.log(`Employee Manager!`);
-    console.log(employees);
+
+
     inquirer.prompt({
         type: 'list',
         message: 'What would you like to do?',
@@ -57,7 +65,7 @@ function promptUser(){
           removeEmployee();
           break;
         case 'Update an Employee':
-          afterConnection();
+          updateEmployee();
           break;
         case 'Exit':
           connection.end();
@@ -72,9 +80,15 @@ function promptUser(){
 
 function addEmployee(){
     
-    inquirer.prompt([...empquestions])
+  // getEmployeeQuestions().then(data => console.log(data))
+  empquestions().then(data => inquirer.prompt(data))
+  // inquirer.prompt(empquestions(data => console.log(data)))
     .then((data)=>{
-        let addedEmployee = new Employee (data.firstname, data.lastname, data.roleid, data.managerid)
+        
+      let chosenManager = employees.filter(employee => employee.combinedname === data.managername)
+      let managerid = chosenManager.employeeid
+
+      let addedEmployee = new Employee (data.firstname, data.lastname, data.roleid, managerid)
 
         console.log('Adding the new employee...\n');
         const query = connection.query(
@@ -139,7 +153,59 @@ function removeEmployee(){
 
 };
 
+function updateEmployee(){
 
+  employeenames = employees.map(employee => employee.combinedname);
+  console.log(employeenames)
+
+  inquirer.prompt({
+    type: 'list',
+    message: 'Who would you like to update?',
+    name: 'updateEmp',
+    choices: [...employeenames, 'Cancel']
+  })
+  .then((data)=>{
+
+    let updateEmployeeName = data.updateEmp
+    if (updateEmployeeName === 'Cancel'){promptUser();}
+    else{
+
+      let updatedEmployee = employees.filter(emp => emp.combinedname === updateEmployeeName)
+      let managerid = updateEmployeeName.employeeid
+
+      console.log('Updating ' + updateEmployeeName + '...\n');
+      
+      // inquirer.prompt([...updatequestions])
+      // inquirer.prompt(empquestions(data => console.log(data)))
+      updatequestions().then(data => inquirer.prompt(data))
+      .then((data)=>{
+        
+        connection.query(
+              
+          'UPDATE employee SET ? WHERE ?',    
+          [
+            {
+              firstname: data.firstname,
+              lastname: data.lastname,
+              roleid: data.roleid,
+              managerid: managerid
+            },
+            {
+              employeeid: updatedEmployee[0].employeeid
+            },
+          ],
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} updated!\n`);
+            // Call deleteProduct AFTER the UPDATE completes
+          }
+        );
+        promptUser();
+      }) 
+      return updatedEmployee
+    }
+  });
+};
 
 function viewAllEmployees(){
     connection.query(
