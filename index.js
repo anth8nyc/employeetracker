@@ -3,9 +3,15 @@ const inquirer = require('inquirer');
 const util = require('util');
 
 const Employee = require("./lib/Employee");
+const Role = require("./lib/Role");
+const Department = require("./lib/Department");
 const empquestions = require("./lib/empquestions")
 const updatequestions = require("./lib/updatequestions")
+const rolequestions = require("./lib/rolequestions")
+const deptquestions = require("./lib/deptquestions")
 const empData = require("./lib/empData")
+const roleData = require("./lib/roleData")
+const deptData = require("./lib/deptData")
 
 let employees = []
 
@@ -26,14 +32,34 @@ connection.connect((err) => {
 
 function promptUser(){
 
-    connection.query(`SELECT employeeid, firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.id`, 
+    connection.query(`SELECT employeeid, firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.deptid`, 
         
-        (err, res) => {    
-            if (err) throw err;
-            employees = res
-            return res
-        }
+      (err, res) => {    
+        if (err) throw err;
+        employees = res
+        return res
+      }
     );
+
+    connection.query(`SELECT title, salary, departmentid, deptname FROM roles JOIN department ON roles.departmentid = department.deptid`,
+    
+      (err, res) => {    
+        if (err) throw err;  
+        roles = res
+        return res
+      }
+    );
+
+    connection.query(`SELECT * FROM department`,
+    
+      (err, res) => {    
+      
+        if (err) throw err;  
+        departments = res
+        return res
+      }
+    );
+
 
     // employeenames = employees.map(employee => employee.combinedname);
 
@@ -46,7 +72,7 @@ function promptUser(){
         type: 'list',
         message: 'What would you like to do?',
         name: 'selectioncriteria',
-        choices: ['View All Employees', 'View All Roles', 'Add an Employee', `Remove an Employee`, `Update an Employee`, `Exit`]
+        choices: ['View All Employees', 'View All Roles', 'Add an Employee', `Remove an Employee`, `Update an Employee`, `Add a Role`, `Add a Department`, `Exit`]
     })
     .then((data)=>{
       console.log(data)
@@ -66,6 +92,12 @@ function promptUser(){
           break;
         case 'Update an Employee':
           updateEmployee();
+          break;
+        case 'Add a Role':
+          addRole();
+          break;
+        case 'Add a Department':
+          addDepartment();
           break;
         case 'Exit':
           connection.end();
@@ -209,7 +241,7 @@ function updateEmployee(){
 
 function viewAllEmployees(){
     connection.query(
-        `SELECT firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.id`, 
+        `SELECT firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname FROM employee JOIN roles ON employee.roleid = roles.id JOIN department ON roles.departmentid = department.deptid`, 
     
         (err, res) => {
             
@@ -226,4 +258,62 @@ function viewAllRoles(){
       console.table(res);
       promptUser();
     });
+};
+
+function addRole(){
+    
+  rolequestions().then(data => inquirer.prompt(data))
+  // inquirer.prompt(empquestions(data => console.log(data)))
+    .then((data)=>{
+        
+      let chosenDepartment = departments.filter(department => department.deptname === data.deptname)
+      let departmentid = chosenDepartment.departmentid
+
+      let addedRole = new Role (data.title, data.salary, departmentid)
+
+        console.log('Adding the new role...\n');
+        const query = connection.query(
+          'INSERT INTO roles SET ?',
+          {
+            title: addedRole.title,
+            salary: addedRole.salary,
+            departmentid: addedRole.departmentid,
+          },
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} added!\n`);
+          }
+        );
+
+        console.log(query.sql);
+        promptUser();
+        return addedRole
+    });
+
+};
+
+
+function addDepartment(){
+    
+  deptquestions().then(data => inquirer.prompt(data))
+  // inquirer.prompt(empquestions(data => console.log(data)))
+    .then((data)=>{
+        
+      let addedDepartment = new Department (data.deptname)
+
+        console.log('Adding the new department...\n');
+        const query = connection.query(
+          'INSERT INTO department SET ?',
+          {
+            deptname: addedDepartment.deptname,
+          },
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} added!\n`);
+          }
+        );
+        promptUser();
+        return addedDepartment
+    });
+
 };

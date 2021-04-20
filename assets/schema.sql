@@ -10,7 +10,7 @@ CREATE TABLE employee (
   lastname VARCHAR(45) NULL,
   roleid INT,
   managerid INT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (employeeid)
 );
 
 INSERT INTO employee (firstname, lastname, roleid, managerid)
@@ -34,15 +34,15 @@ VALUES ("Code Manager", 89500.00, 1),
 ("Design Manager", 79500.00, 2);
 
 CREATE TABLE department (
-  id INT NOT NULL AUTO_INCREMENT,
+  deptid INT NOT NULL AUTO_INCREMENT,
   deptname VARCHAR(45) NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (deptid)
 );
 
 INSERT INTO department (deptname)
 VALUES ("Code"),("Design"),("Finance");
 
-SELECT concat(firstname,' ',lastname) as combinedname, id from employee;
+SELECT concat(firstname,' ',lastname) as combinedname from employee;
 
 -- Displays employee name, job title, department, manager id 
 SELECT firstname, lastname, title, salary, departmentid, managerid
@@ -52,10 +52,14 @@ RIGHT JOIN roles ON employee.roleid = roles.id;
 -- Displays department name, job title, salary 
 SELECT deptname, title, salary, departmentid
 FROM roles
-RIGHT JOIN department ON roles.departmentid = department.id;
+RIGHT JOIN department ON roles.departmentid = department.deptid;
 
 -- Displays employee name, job title, department, manager id 
-SELECT firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname
+SELECT employeeid, firstname, lastname, title, deptname, salary, managerid, concat(firstname,' ',lastname) as combinedname
 FROM employee
 JOIN roles ON employee.roleid = roles.id
-JOIN department ON roles.departmentid = department.id;
+JOIN department ON roles.departmentid = department.deptid;
+
+SELECT title, salary, departmentid, deptname
+FROM roles
+JOIN department ON roles.departmentid = department.deptid;
