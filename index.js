@@ -6,9 +6,10 @@ const Employee = require("./lib/models/Employee");
 const Role = require("./lib/models/Role");
 const Department = require("./lib/models/Department");
 const empquestions = require("./lib/questions/empquestions")
-const updatequestions = require("./lib/questions/updatequestions")
 const rolequestions = require("./lib/questions/rolequestions")
 const deptquestions = require("./lib/questions/deptquestions")
+const updatequestions = require("./lib/questions/updatequestions")
+const updateroleQ = require("./lib/questions/updateroleQ")
 const empData = require("./lib/data/empData")
 const roleData = require("./lib/data/roleData")
 const deptData = require("./lib/data/deptData")
@@ -62,57 +63,122 @@ function promptUser(){
       }
     );
 
-    // employeenames = employees.map(employee => employee.combinedname);
-    // console.log(employees);
     
     console.log(`Employee Manager!`);
 
 
 
     inquirer.prompt({
-        type: 'list',
-        message: 'What would you like to do?',
-        name: 'selectioncriteria',
-        choices: ['View All Employees', 'View All Roles', `View All Departments`,
-          'Add an Employee', `Add a Role`, `Add a Department`, `Update an Employee`, `Update Roles`,
-          `Remove an Employee`, `Remove a Role`, `Remove a Department`, `Exit`]
+        
+      type: 'list',
+      message: 'What would you like to do?',
+      name: 'selectioncriteria',
+      choices: [`View Data`, `Add Data`, `Update Data`,`Remove Data`, `Exit`]
+
     })
     .then((data)=>{
       console.log(data)
       switch (data.selectioncriteria) {
       
-        case 'View All Employees':
-          viewAllEmployees();
-          break;
-        case 'View All Roles':
-          viewAllRoles();
-          break;
-        case 'View All Departments':
-          viewAllDepartments();
+        case 'View Data':
+          inquirer.prompt({
+            type: 'list',
+            message: 'What would you like to view?',
+            name: 'viewcriteria',
+            choices: [`View All Employees`, `View All Roles`, `View All Departments`, `Cancel`]}).then((data)=>{
+              switch (data.viewcriteria) {
+                case `View All Employees`:
+                  viewAllEmployees();
+                  break;
+                case 'View All Roles':
+                  viewAllRoles();
+                  break;
+                case 'View All Departments':
+                  viewAllDepartments();
+                  break;
+                case 'Cancel':
+                  promptUser();
+                default:
+                  break;
+              }
+            })
           break;
 
-
-        case 'Add an Employee':
-          addEmployee();
+        case 'Add Data':
+          inquirer.prompt({
+            type: 'list',
+            message: 'What would you like to add?',
+            name: 'addcriteria',
+            choices: [`Add an Employee`, `Add a Role`, `Add a Department`, `Cancel`]}).then((data)=>{
+              switch (data.addcriteria) {
+                
+                case 'Add an Employee':
+                  addEmployee();
+                  break;
+                case 'Add a Role':
+                  addRole();
+                  break;
+                case 'Add a Department':
+                  addDepartment();
+                  break;
+                case 'Cancel':
+                  promptUser();
+                default:
+                  break;
+              }
+            })
           break;
-        case 'Add a Role':
-          addRole();
+
+        case 'Update Data':
+          inquirer.prompt({
+            type: 'list',
+            message: 'What would you like to update?',
+            name: 'updatecriteria',
+            choices: [`Update an Employee`, `Update Roles`, `Update Department`, `Cancel`]}).then((data)=>{
+              switch (data.updatecriteria) {
+                
+                case 'Update an Employee':
+                  updateEmployee();
+                  break;  
+                case 'Update Roles':
+                  updateRole();
+                  break;  
+                case 'Update Department':
+                  updateDepartment();
+                  break;
+                case 'Cancel':
+                  promptUser();
+                default:
+                  break;
+              }
+            })
           break;
-        case 'Add a Department':
-          addDepartment();
-          break;    
-        
 
-        case 'Update an Employee':
-          updateEmployee();
-          break;  
-
-
-        case 'Remove an Employee':
-          removeEmployee();
+        case 'Remove Data':
+          inquirer.prompt({
+            type: 'list',
+            message: 'What would you like to remove?',
+            name: 'removecriteria',
+            choices: [`Remove an Employee`, `Remove a Role`, `Remove a Department`, `Cancel`]}).then((data)=>{
+              switch (data.removecriteria) {
+                
+                case 'Remove an Employee':
+                  removeEmployee();
+                  break; 
+                case 'Remove a Role':
+                  removeRole();
+                  break;
+                case 'Remove a Department':
+                  removeDepartment();
+                  break;
+                case 'Cancel':
+                  promptUser();
+                default:
+                  break;
+              }
+            })
           break;
-        
-      
+
         case 'Exit':
           connection.end();
           process.exit();
@@ -208,15 +274,13 @@ function addRole(){
   // inquirer.prompt(empquestions(data => console.log(data)))
     .then((data)=>{
         
-      let [chosenDepartment] = departments.filter(department => department.deptname === data.deptname)
-      let departmentid = chosenDepartment.deptid
-      console.log('departmentid: '+ departmentid)
-      console.log('departments:')
-      console.table(departments)
-      console.log(data)
-      console.log(chosenDepartment)
+      // console.log('departmentid: '+ departmentid)
+      // console.log('departments:')
+      // console.table(departments)
+      // console.log(data)
+      // console.log(chosenDepartment)
 
-      let addedRole = new Role (data.title, data.salary, departmentid)
+      let addedRole = new Role (data.title, data.salary, data.departmentid)
 
         console.log('Adding the new role...\n');
         const query = connection.query(
@@ -306,6 +370,46 @@ function removeEmployee(){
 
 };
 
+function removeRole(){
+    
+  rolelist = roles.map(role => role.title);
+  console.log(rolelist)
+
+  inquirer.prompt({
+      type: 'list',
+      message: 'What role would you like to remove?',
+      name: 'removeRole',
+      choices: [...rolelist, 'Cancel']
+  })
+  .then((data)=>{
+      
+      let removedRoleTitle = data.removeRole
+      if (removedRoleTitle === 'Cancel'){promptUser();}
+      else{
+
+          let removedRole = roles.filter(role => role.title === removedRoleTitle)
+     
+          console.log('Removing the role...\n');
+          connection.query(
+        'DELETE FROM roles WHERE ?',
+        {
+          title: removedRoleTitle
+        },
+        (err, res) => {
+          if (err) throw err;
+  
+          console.log(`${res.affectedRows} was removed.\n`);
+        }
+        );
+
+          promptUser();
+          return removedRole
+      }
+
+  });
+
+};
+
 // Update Functions
 
 function updateEmployee(){
@@ -354,6 +458,100 @@ function updateEmployee(){
         promptUser();
       }) 
       return updatedEmployee
+    }
+  });
+};
+
+function updateRole(){
+
+  rolelist = roles.map(role => role.title);
+  console.log(rolelist)
+
+  inquirer.prompt({
+    type: 'list',
+    message: 'Which role would you like to update?',
+    name: 'updateRole',
+    choices: [...rolelist, 'Cancel']
+  })
+  .then((data)=>{
+
+    let updateRoleName = data.updateRole
+    if (updateRoleName === 'Cancel'){promptUser();}
+    else{
+
+      let updatedRole = roles.filter(role => role.title === updateRoleName)
+      console.log('Updating ' + updateRoleName + '...\n');
+      
+      updateroleQ().then(data => inquirer.prompt(data))
+      .then((data)=>{
+        
+        connection.query(
+              
+          'UPDATE roles SET ? WHERE ?',    
+          [
+            {
+              title: data.title,
+              salary: data.salary,
+              departmentid: data.departmentid,
+            },
+            {
+              title: updatedRole[0].title
+            },
+          ],
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} updated!\n`);
+          }
+        );
+        promptUser();
+      }) 
+      return updatedRole
+    }
+  });
+};
+
+function updateDepartment(){
+
+  deptlist = departments.map(dept => dept.deptname);
+  console.log(deptlist)
+
+  inquirer.prompt({
+    type: 'list',
+    message: 'Which department would you like to rename?',
+    name: 'updateDept',
+    choices: [...deptlist, 'Cancel']
+  })
+  .then((data)=>{
+
+    let updateDeptName = data.updateDept
+    if (updateDeptName === 'Cancel'){promptUser();}
+    else{
+
+      let updatedDept = departments.filter(dept => dept.deptname === updateDeptName)
+      console.log('Updating ' + updateDeptName + '...\n');
+      
+      deptquestions().then(data => inquirer.prompt(data))
+      .then((data)=>{
+        
+        connection.query(
+              
+          'UPDATE department SET ? WHERE ?',    
+          [
+            {
+              deptname: data.deptname,
+            },
+            {
+              deptname: updatedDept[0].deptname
+            },
+          ],
+          (err, res) => {
+            if (err) throw err;
+            console.log(`${res.affectedRows} updated!\n`);
+          }
+        );
+        promptUser();
+      }) 
+      return updatedDept
     }
   });
 };
