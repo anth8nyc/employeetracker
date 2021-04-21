@@ -40,7 +40,7 @@ CREATE TABLE department (
 );
 
 INSERT INTO department (deptname)
-VALUES ("Code"),("Design"),("Finance");
+VALUES ("Code"),("Design"),("Finance"),("HR");
 
 SELECT concat(firstname,' ',lastname) as combinedname from employee;
 

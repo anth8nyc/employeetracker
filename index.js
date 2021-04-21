@@ -1,6 +1,5 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
-const util = require('util');
 
 const Employee = require("./lib/models/Employee");
 const Role = require("./lib/models/Role");
@@ -10,9 +9,6 @@ const rolequestions = require("./lib/questions/rolequestions")
 const deptquestions = require("./lib/questions/deptquestions")
 const updatequestions = require("./lib/questions/updatequestions")
 const updateroleQ = require("./lib/questions/updateroleQ")
-const empData = require("./lib/data/empData")
-const roleData = require("./lib/data/roleData")
-const deptData = require("./lib/data/deptData")
 
 let employees = []
 
@@ -27,10 +23,10 @@ const connection = mysql.createConnection({
 
 connection.connect((err) => {
     if (err) throw err;
-    console.log(`connected as id ${connection.threadId}`);
     promptUser();
 });
 
+////////////////////
 // Main Prompt Menu
 
 function promptUser(){
@@ -64,7 +60,7 @@ function promptUser(){
     );
 
     
-    console.log(`Employee Manager!`);
+    console.log(`  //////////////////////\n // Employee Manager //\n//////////////////////`);
 
 
 
@@ -73,19 +69,19 @@ function promptUser(){
       type: 'list',
       message: 'What would you like to do?',
       name: 'selectioncriteria',
-      choices: [`View Data`, `Add Data`, `Update Data`,`Remove Data`, `Exit`]
+      choices: [`View Employee Data`, `Add Employee Data`, `Update Employee Data`,`Remove Employee Data`, `Exit`]
 
     })
     .then((data)=>{
-      console.log(data)
+
       switch (data.selectioncriteria) {
       
-        case 'View Data':
+        case 'View Employee Data':
           inquirer.prompt({
             type: 'list',
             message: 'What would you like to view?',
             name: 'viewcriteria',
-            choices: [`View All Employees`, `View All Roles`, `View All Departments`, `Cancel`]}).then((data)=>{
+            choices: [`View All Employees`, `View All Roles`, `View All Departments`, `View Employees by Manager`, `Cancel`]}).then((data)=>{
               switch (data.viewcriteria) {
                 case `View All Employees`:
                   viewAllEmployees();
@@ -96,6 +92,9 @@ function promptUser(){
                 case 'View All Departments':
                   viewAllDepartments();
                   break;
+                case 'View Employees by Manager':
+                  viewEmployeesByManager();
+                  break;
                 case 'Cancel':
                   promptUser();
                 default:
@@ -104,7 +103,7 @@ function promptUser(){
             })
           break;
 
-        case 'Add Data':
+        case 'Add Employee Data':
           inquirer.prompt({
             type: 'list',
             message: 'What would you like to add?',
@@ -129,7 +128,7 @@ function promptUser(){
             })
           break;
 
-        case 'Update Data':
+        case 'Update Employee Data':
           inquirer.prompt({
             type: 'list',
             message: 'What would you like to update?',
@@ -154,7 +153,7 @@ function promptUser(){
             })
           break;
 
-        case 'Remove Data':
+        case 'Remove Employee Data':
           inquirer.prompt({
             type: 'list',
             message: 'What would you like to remove?',
@@ -189,7 +188,7 @@ function promptUser(){
 };
 
 
-
+////////////////////
 // View Functions
 
 function viewAllEmployees(){
@@ -201,14 +200,6 @@ function viewAllEmployees(){
         JOIN roles ON employee.roleid = roles.id 
         JOIN department ON roles.departmentid = department.deptid
         `, 
-        // `SELECT employee.firstname, employee.lastname, title, deptname, 
-        // salary, concat(employee.firstname,' ',employee.lastname) as combinedname, concat(manager.firstname,' ',manager.lastname) as managerName 
-        // FROM employee 
-        // LEFT JOIN employee as manager ON employee.managerid = manager.employeeid
-        // JOIN roles ON employee.roleid = roles.id 
-        // JOIN department ON roles.departmentid = department.deptid
-        // `, 
-    
         (err, res) => {
             
           if (err) throw err;
@@ -218,8 +209,48 @@ function viewAllEmployees(){
     );
 };
 
+function viewEmployeesByManager(){
+
+  employeenames = employees.map(employee => employee.combinedname)
+
+  inquirer.prompt({
+    type: 'list',
+    message: `Which manager's team would you like to see?`,
+    name: 'manageEmp',
+    choices: [...employeenames, 'Cancel']
+  })
+  .then((data)=>{
+    
+    let managerEmployeeName = data.manageEmp
+    if (managerEmployeeName === 'Cancel'){promptUser();}
+    else{
+    
+      connection.query(
+        `SELECT employee.employeeid as ID, concat(employee.firstname,' ',employee.lastname) as Name, title as Role, deptname as Department, 
+        salary as Salary, concat(manager.firstname,' ',manager.lastname) as Manager 
+        FROM employee 
+        LEFT JOIN employee as manager ON employee.managerid = manager.employeeid
+        JOIN roles ON employee.roleid = roles.id 
+        JOIN department ON roles.departmentid = department.deptid
+        `, 
+        
+        (err, res) => {            
+          if (err) throw err;
+          let team = res.filter(emp => emp.Manager === managerEmployeeName)
+          console.table(team)
+          promptUser();
+        }
+      );
+    }
+  }) 
+};
+
 function viewAllRoles(){
-    connection.query('SELECT * FROM roles', (err, res) => {
+    connection.query(`
+      SELECT deptname as Department, title as Title, salary as Salary
+      FROM roles
+      LEFT JOIN department ON roles.departmentid = department.deptid
+      ORDER BY deptname`, (err, res) => {
       if (err) throw err;
       console.table(res);
       promptUser();
@@ -227,13 +258,14 @@ function viewAllRoles(){
 };
 
 function viewAllDepartments(){
-  connection.query('SELECT * FROM department', (err, res) => {
+  connection.query('SELECT deptname as Department FROM department', (err, res) => {
     if (err) throw err;
     console.table(res);
     promptUser();
   });
 };
 
+////////////////////
 // Add Functions
 
 function addEmployee(){
@@ -246,7 +278,7 @@ function addEmployee(){
       let addedEmployee = new Employee (data.firstname, data.lastname, data.roleid, data.managerid)
 
         console.log('Adding the new employee...\n');
-        const query = connection.query(
+        connection.query(
           'INSERT INTO employee SET ?',
           {
             firstname: addedEmployee.firstName,
@@ -261,7 +293,6 @@ function addEmployee(){
           }
         );
 
-        console.log(query.sql);
         promptUser();
         return addedEmployee
     });
@@ -271,19 +302,12 @@ function addEmployee(){
 function addRole(){
     
   rolequestions().then(data => inquirer.prompt(data))
-  // inquirer.prompt(empquestions(data => console.log(data)))
     .then((data)=>{
         
-      // console.log('departmentid: '+ departmentid)
-      // console.log('departments:')
-      // console.table(departments)
-      // console.log(data)
-      // console.log(chosenDepartment)
-
       let addedRole = new Role (data.title, data.salary, data.departmentid)
 
         console.log('Adding the new role...\n');
-        const query = connection.query(
+        connection.query(
           'INSERT INTO roles SET ?',
           {
             title: addedRole.title,
@@ -296,7 +320,6 @@ function addRole(){
           }
         );
 
-        console.log(query.sql);
         promptUser();
         return addedRole
     });
@@ -306,13 +329,12 @@ function addRole(){
 function addDepartment(){
     
   deptquestions().then(data => inquirer.prompt(data))
-  // inquirer.prompt(empquestions(data => console.log(data)))
     .then((data)=>{
         
       let addedDepartment = new Department (data.deptname)
 
         console.log('Adding the new department...\n');
-        const query = connection.query(
+        connection.query(
           'INSERT INTO department SET ?',
           {
             deptname: addedDepartment.deptname,
@@ -328,12 +350,12 @@ function addDepartment(){
 
 };
 
+////////////////////
 // Remove Functions
 
 function removeEmployee(){
     
   employeenames = employees.map(employee => employee.combinedname);
-  console.log(employeenames)
 
   inquirer.prompt({
       type: 'list',
@@ -373,7 +395,7 @@ function removeEmployee(){
 function removeRole(){
     
   rolelist = roles.map(role => role.title);
-  console.log(rolelist)
+  // console.log(rolelist)
 
   inquirer.prompt({
       type: 'list',
@@ -410,12 +432,12 @@ function removeRole(){
 
 };
 
+////////////////////
 // Update Functions
 
 function updateEmployee(){
 
   employeenames = employees.map(employee => employee.combinedname);
-  console.log(employeenames)
 
   inquirer.prompt({
     type: 'list',
@@ -452,7 +474,6 @@ function updateEmployee(){
           (err, res) => {
             if (err) throw err;
             console.log(`${res.affectedRows} updated!\n`);
-            // Call deleteProduct AFTER the UPDATE completes
           }
         );
         promptUser();
@@ -465,7 +486,6 @@ function updateEmployee(){
 function updateRole(){
 
   rolelist = roles.map(role => role.title);
-  console.log(rolelist)
 
   inquirer.prompt({
     type: 'list',
@@ -513,7 +533,6 @@ function updateRole(){
 function updateDepartment(){
 
   deptlist = departments.map(dept => dept.deptname);
-  console.log(deptlist)
 
   inquirer.prompt({
     type: 'list',
