@@ -128,19 +128,26 @@ function promptUser(){
 
 function viewAllEmployees(){
     connection.query(
-        `SELECT employee.firstname, employee.lastname, title, deptname, 
-        salary, concat(employee.firstname,' ',employee.lastname) as combinedname, concat(manager.firstname,' ',manager.lastname) as managerName 
+        `SELECT employee.employeeid as ID, concat(employee.firstname,' ',employee.lastname) as Name, title as Role, deptname as Department, 
+        salary as Salary, concat(manager.firstname,' ',manager.lastname) as Manager 
         FROM employee 
         LEFT JOIN employee as manager ON employee.managerid = manager.employeeid
         JOIN roles ON employee.roleid = roles.id 
         JOIN department ON roles.departmentid = department.deptid
         `, 
+        // `SELECT employee.firstname, employee.lastname, title, deptname, 
+        // salary, concat(employee.firstname,' ',employee.lastname) as combinedname, concat(manager.firstname,' ',manager.lastname) as managerName 
+        // FROM employee 
+        // LEFT JOIN employee as manager ON employee.managerid = manager.employeeid
+        // JOIN roles ON employee.roleid = roles.id 
+        // JOIN department ON roles.departmentid = department.deptid
+        // `, 
     
         (err, res) => {
             
-            if (err) throw err;
-            console.table(res);
-            promptUser();
+          if (err) throw err;
+          console.table(res);
+          promptUser();
         }
     );
 };
@@ -168,8 +175,7 @@ function addEmployee(){
   empquestions().then(data => inquirer.prompt(data))
     .then((data)=>{
         
-      let chosenManager = employees.filter(employee => employee.combinedname === data.managername)
-      let managerid = chosenManager.employeeid
+      if (data.managerid === 'Not Applicable'){data.managerid = null}
 
       let addedEmployee = new Employee (data.firstname, data.lastname, data.roleid, data.managerid)
 
